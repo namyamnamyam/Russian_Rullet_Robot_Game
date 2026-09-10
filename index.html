@@ -3,138 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#050504" />
+  <meta name="theme-color" content="#020202" />
   <title>Chrome Chamber // Prototype</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app" class="cabinet-shell">
+  <div id="app" class="stage-shell">
     <div class="film-grain" aria-hidden="true"></div>
     <div class="screen-lines" aria-hidden="true"></div>
     <div class="edge-vignette" aria-hidden="true"></div>
-
-    <header class="hud">
-      <section class="panel enemy-panel">
-        <div class="panel-kicker">HOUSE UNIT // 07</div>
-        <div class="panel-row">
-          <div class="panel-label">상대 기체</div>
-          <div id="enemyIntegrity" class="integrity" aria-label="상대 기체 내구도"></div>
-        </div>
-      </section>
-
-      <section class="center-status">
-        <div class="center-eyebrow">ILLEGAL REMOTE TABLE</div>
-        <div class="game-title">CHROME CHAMBER</div>
-        <div id="turnLabel" class="turn-label">초기화 중...</div>
-      </section>
-
-      <section class="panel player-panel">
-        <div class="panel-kicker">REMOTE AVATAR // LINK</div>
-        <div class="panel-row">
-          <div class="panel-label">내 기체</div>
-          <div id="playerIntegrity" class="integrity" aria-label="내 기체 내구도"></div>
-        </div>
-      </section>
-    </header>
 
     <main class="viewport">
       <div id="cameraRig" class="camera-rig">
         <div class="scene">
           <div class="back-wall"></div>
-          <div class="wall-panel wall-panel-a"></div>
-          <div class="wall-panel wall-panel-b"></div>
+          <div class="back-shadow"></div>
+
           <div class="hanging-cable cable-a"></div>
           <div class="hanging-cable cable-b"></div>
           <div class="hanging-cable cable-c"></div>
-          <div class="ceiling-light"></div>
-          <div class="red-haze"></div>
-          <div class="cold-haze"></div>
-          <div class="dealer-emblem"><span>07</span></div>
 
-          <div id="enemyRobot" class="robot enemy" aria-label="회색 휴머노이드 로봇">
+          <div class="studio-lamp lamp-left">
+            <div class="lamp-arm"></div>
+            <div class="lamp-body"><span></span></div>
+            <i class="barn-door door-a"></i><i class="barn-door door-b"></i>
+            <i class="barn-door door-c"></i><i class="barn-door door-d"></i>
+            <div class="lamp-cone"></div>
+          </div>
+          <div class="studio-lamp lamp-right">
+            <div class="lamp-arm"></div>
+            <div class="lamp-body"><span></span></div>
+            <i class="barn-door door-a"></i><i class="barn-door door-b"></i>
+            <i class="barn-door door-c"></i><i class="barn-door door-d"></i>
+            <div class="lamp-cone"></div>
+          </div>
+
+          <aside class="left-machinery" aria-hidden="true">
+            <div class="machine-box"></div><div class="machine-slot"></div><div class="machine-led"></div>
+          </aside>
+
+          <aside class="right-machinery">
+            <div class="terminal-casing">
+              <div class="terminal-screen">
+                <div class="terminal-top"><span>TABLE FEED</span><b></b></div>
+                <div id="logBox" class="log-box">링크 대기 중...</div>
+                <div class="terminal-footer">CH-07 // HOUSE NET</div>
+              </div>
+            </div>
+          </aside>
+
+          <div class="scene-titleplate">
+            <small>ILLEGAL REMOTE TABLE</small>
+            <strong>CHROME CHAMBER</strong>
+            <span id="turnLabel">초기화 중...</span>
+          </div>
+
+          <div class="status-plate enemy-status">
+            <span>HOUSE UNIT // 07</span>
+            <div id="enemyIntegrity" class="integrity" aria-label="상대 기체 내구도"></div>
+          </div>
+          <div class="status-plate player-status">
+            <span>REMOTE AVATAR // LINK</span>
+            <div id="playerIntegrity" class="integrity" aria-label="내 기체 내구도"></div>
+          </div>
+
+          <div class="dealer-halo"></div>
+
+          <div id="enemyRobot" class="robot enemy sprite-cutout" aria-label="회색 휴머노이드 로봇">
             <div class="robot-shadow"></div>
             <div class="robot-head">
-              <div class="face-seam"></div>
-              <div class="robot-eye"></div>
+              <div class="face-plate"></div>
+              <div class="robot-eye eye-left"></div>
+              <div class="robot-eye eye-right"></div>
+              <div class="mouth-grille"><i></i><i></i><i></i><i></i><i></i></div>
             </div>
             <div class="robot-neck"></div>
-            <div class="shoulder shoulder-left"></div>
-            <div class="shoulder shoulder-right"></div>
             <div class="robot-torso">
               <div class="chest-stamp">UNIT 07</div>
               <div class="robot-core"></div>
             </div>
-            <div class="robot-arm arm-left"><span class="joint"></span></div>
-            <div class="robot-arm arm-right"><span class="joint"></span></div>
-            <div class="robot-leg leg-left"></div>
-            <div class="robot-leg leg-right"></div>
+            <div class="robot-arm arm-left"><span class="joint"></span><span class="hand"></span></div>
+            <div class="robot-arm arm-right"><span class="joint"></span><span class="hand"></span></div>
           </div>
 
           <div id="playerRobot" class="robot player" aria-hidden="true">
-            <div class="robot-head"><div class="robot-eye"></div></div>
-            <div class="robot-neck"></div>
-            <div class="robot-torso"><div class="robot-core"></div></div>
+            <div class="robot-head"></div><div class="robot-torso"></div>
           </div>
 
           <div class="table-zone">
             <div class="table-shadow"></div>
             <div class="table-rim table-rim-back"></div>
             <div class="table-top">
+              <div class="table-stains"></div>
               <div class="table-scratches"></div>
-              <div class="table-circle"></div>
-              <div class="table-divider"></div>
+              <div class="table-marking"></div>
             </div>
-            <div class="table-edge">
-              <span class="table-bolt bolt-a"></span>
-              <span class="table-bolt bolt-b"></span>
-              <span class="table-bolt bolt-c"></span>
-            </div>
-
-            <aside class="crt-console" aria-label="테이블 모니터">
-              <div class="crt-frame">
-                <div class="crt-header">
-                  <span>TABLE FEED</span>
-                  <span class="crt-led"></span>
-                </div>
-                <div id="logBox" class="log-box">링크 대기 중...</div>
-                <div class="crt-footer">CH-07 / REMOTE SAFE LINK</div>
-              </div>
-            </aside>
+            <div class="table-edge"></div>
 
             <div id="ammoReveal" class="ammo-reveal hidden">
-              <div class="reveal-header">
-                <span>CHAMBER REPORT</span>
-                <small>ROUND LOAD SCAN</small>
-              </div>
+              <div class="reveal-header"><span>CHAMBER REPORT</span><small>LOAD SCAN</small></div>
               <div class="ammo-stats">
-                <div class="ammo-stat">
-                  <span class="stat-name">TOTAL</span>
-                  <strong id="ammoTotal">0</strong>
-                </div>
-                <div class="ammo-stat live">
-                  <span class="stat-name">LIVE</span>
-                  <strong id="ammoLive">0</strong>
-                </div>
-                <div class="ammo-stat blank">
-                  <span class="stat-name">BLANK</span>
-                  <strong id="ammoBlank">0</strong>
-                </div>
+                <div class="ammo-stat"><span>TOTAL</span><strong id="ammoTotal">0</strong></div>
+                <div class="ammo-stat live"><span>LIVE</span><strong id="ammoLive">0</strong></div>
+                <div class="ammo-stat blank"><span>BLANK</span><strong id="ammoBlank">0</strong></div>
               </div>
-              <div id="shellSlots" class="shell-slots" aria-label="탄 구성"></div>
-              <div class="reveal-caption">장전 순서는 공개되지 않는다.</div>
+              <div id="shellSlots" class="shell-slots"></div>
             </div>
 
             <div id="shotgun" class="shotgun lowered" aria-label="경기용 더블배럴 샷건">
               <div class="muzzle-ring"></div>
-              <div class="barrels">
-                <div class="barrel barrel-top"></div>
-                <div class="barrel barrel-bottom"></div>
-              </div>
+              <div class="barrels"><div class="barrel barrel-top"></div><div class="barrel barrel-bottom"></div></div>
               <div class="break-joint"></div>
-              <div class="receiver">
-                <span class="receiver-pin pin-a"></span>
-                <span class="receiver-pin pin-b"></span>
-              </div>
+              <div class="receiver"><span class="receiver-pin pin-a"></span><span class="receiver-pin pin-b"></span></div>
               <div class="trigger-guard"></div>
               <div class="stock"></div>
             </div>
@@ -144,38 +124,14 @@
     </main>
 
     <section class="bottom-ui">
-      <div class="subtitle-shell">
-        <span class="subtitle-tag">SYSTEM</span>
-        <div id="subtitle" class="subtitle">준비 중...</div>
-      </div>
-
+      <div class="subtitle-shell"><span class="subtitle-tag">SYSTEM</span><div id="subtitle" class="subtitle">준비 중...</div></div>
       <div class="controls">
-        <button id="shootSelfBtn" class="action-btn self-btn" type="button">
-          <span class="btn-no">01</span>
-          <span class="btn-copy">
-            <strong>내 기체에게 발사</strong>
-            <small>공포탄이면 추가 행동</small>
-          </span>
-          <span class="btn-arrow">›</span>
-        </button>
-
-        <button id="shootEnemyBtn" class="action-btn enemy-btn primary" type="button">
-          <span class="btn-no">02</span>
-          <span class="btn-copy">
-            <strong>상대 기체에게 발사</strong>
-            <small>실탄이면 상대 내구도 감소</small>
-          </span>
-          <span class="btn-arrow">›</span>
-        </button>
-
-        <button id="restartBtn" class="action-btn ghost restart-btn" type="button">
-          <span class="btn-no">↻</span>
-          <span class="btn-copy"><strong>재접속</strong><small>세션 초기화</small></span>
-        </button>
+        <button id="shootSelfBtn" class="action-btn self-btn" type="button"><span class="btn-no">01</span><span class="btn-copy"><strong>내 기체에게 발사</strong><small>공포탄이면 추가 행동</small></span></button>
+        <button id="shootEnemyBtn" class="action-btn enemy-btn primary" type="button"><span class="btn-no">02</span><span class="btn-copy"><strong>상대 기체에게 발사</strong><small>실탄이면 상대 내구도 감소</small></span></button>
+        <button id="restartBtn" class="action-btn ghost restart-btn" type="button"><span class="btn-no">↻</span><span class="btn-copy"><strong>재접속</strong><small>세션 초기화</small></span></button>
       </div>
     </section>
   </div>
-
   <script src="game.js"></script>
 </body>
 </html>
