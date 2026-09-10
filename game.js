@@ -1,487 +1,500 @@
-const MAX_INTEGRITY = 3;
-const MIN_SHELLS = 3;
-const MAX_SHELLS = 6;
+const playerIntegrityEl = document.getElementById("playerIntegrity");
+const enemyIntegrityEl = document.getElementById("enemyIntegrity");
+const turnLabelEl = document.getElementById("turnLabel");
+const subtitleEl = document.getElementById("subtitle");
+const logBoxEl = document.getElementById("logBox");
 
-const els = {
-  shell: document.getElementById('gameShell'),
-  playerIntegrity: document.getElementById('playerIntegrity'),
-  enemyIntegrity: document.getElementById('enemyIntegrity'),
-  roundNumber: document.getElementById('roundNumber'),
-  remainingCount: document.getElementById('remainingCount'),
-  turnLabel: document.getElementById('turnLabel'),
-  enemyRobot: document.getElementById('enemyRobot'),
-  shotgun: document.getElementById('shotgun'),
-  muzzleFlash: document.getElementById('muzzleFlash'),
-  sparks: document.getElementById('sparks'),
-  playerHitFlash: document.getElementById('playerHitFlash'),
-  actionPanel: document.getElementById('actionPanel'),
-  shootSelfBtn: document.getElementById('shootSelfBtn'),
-  shootEnemyBtn: document.getElementById('shootEnemyBtn'),
-  subtitle: document.getElementById('subtitle'),
-  briefingOverlay: document.getElementById('briefingOverlay'),
-  briefingEyebrow: document.getElementById('briefingEyebrow'),
-  briefingTitle: document.getElementById('briefingTitle'),
-  briefingText: document.getElementById('briefingText'),
-  shellTray: document.getElementById('shellTray'),
-  briefTotal: document.getElementById('briefTotal'),
-  briefLive: document.getElementById('briefLive'),
-  briefBlank: document.getElementById('briefBlank'),
-  startBtn: document.getElementById('startBtn'),
-  endOverlay: document.getElementById('endOverlay'),
-  endTitle: document.getElementById('endTitle'),
-  endText: document.getElementById('endText'),
-  restartBtn: document.getElementById('restartBtn')
-};
+const shootSelfBtn = document.getElementById("shootSelfBtn");
+const shootEnemyBtn = document.getElementById("shootEnemyBtn");
+const restartBtn = document.getElementById("restartBtn");
+
+const cameraRig = document.getElementById("cameraRig");
+const ammoReveal = document.getElementById("ammoReveal");
+const ammoTotalEl = document.getElementById("ammoTotal");
+const ammoLiveEl = document.getElementById("ammoLive");
+const ammoBlankEl = document.getElementById("ammoBlank");
+const shellSlotsEl = document.getElementById("shellSlots");
+
+const shotgunEl = document.getElementById("shotgun");
+const enemyRobotEl = document.getElementById("enemyRobot");
+const playerRobotEl = document.getElementById("playerRobot");
 
 const state = {
-  playerIntegrity: MAX_INTEGRITY,
-  enemyIntegrity: MAX_INTEGRITY,
-  ammo: [],
+  playerHp: 3,
+  enemyHp: 3,
+  shells: [],
   round: 0,
-  turn: 'player',
-  running: false,
+  turn: "player",
   locked: true,
-  briefingToken: 0
+  gameOver: false,
+  audioCtx: null,
 };
 
-let audioCtx = null;
+shootSelfBtn.addEventListener("click", () => playerAction("self"));
+shootEnemyBtn.addEventListener("click", () => playerAction("enemy"));
+restartBtn.addEventListener("click", startGame);
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+startGame();
+
+function startGame() {
+  state.playerHp = 3;
+  state.enemyHp = 3;
+  state.round = 0;
+  state.turn = "player";
+  state.shells = [];
+  state.locked = true;
+  state.gameOver = false;
+
+  removeRobotStates();
+  restartBtn.style.display = "none";
+  setSubtitle("불법 경기장 연결 완료. 경기 준비 중...");
+  writeLog("새 프로토타입 매치를 시작한다.");
+  renderIntegrity();
+  updateTurnLabel("라운드 준비");
+  nextRound();
 }
 
-function shuffle(list) {
-  for (let i = list.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [list[i], list[j]] = [list[j], list[i]];
+async function nextRound() {
+  if (state.gameOver) return;
+
+  state.locked = true;
+  state.round += 1;
+  state.shells = generateShellSet();
+
+  const liveCount = countType("live");
+  const blankCount = countType("blank");
+
+  updateTurnLabel(`라운드 ${state.round}`);
+  writeLog(`라운드 ${state.round}: 총 ${state.shells.length}발 / 실탄 ${liveCount} / 공포탄 ${blankCount}`);
+
+  // 탄환 구성 확인은 라운드 시작 시 딱 한 번만.
+  await revealAmmoSequence(liveCount, blankCount);
+
+  if (state.gameOver) return;
+
+  if (state.turn === "player") {
+    state.locked = false;
+    setSubtitle("네 차례다. 누구를 겨냥할지 선택해.");
+    updateTurnLabel("너의 턴");
+  } else {
+    updateTurnLabel("상대 턴");
+    setSubtitle("상대 기체가 움직인다...");
+    await sleep(700);
+    enemyTurn();
   }
-  return list;
 }
 
-function remainingStats() {
-  let live = 0;
-  let blank = 0;
-  for (const shell of state.ammo) {
-    if (shell === 'live') live += 1;
-    else blank += 1;
-  }
-  return { total: state.ammo.length, live, blank };
-}
-
-function generateAmmo() {
-  const total = MIN_SHELLS + Math.floor(Math.random() * (MAX_SHELLS - MIN_SHELLS + 1));
-  const maxLive = Math.min(total - 1, Math.ceil(total / 2) + 1);
-  const live = 1 + Math.floor(Math.random() * maxLive);
+function generateShellSet() {
+  const total = randInt(2, 5);
+  const maxLive = Math.min(2, total - 1);
+  const live = randInt(1, maxLive);
   const blank = total - live;
-  const correctedLive = blank === 0 ? live - 1 : live;
-  const correctedBlank = total - correctedLive;
 
-  const ammo = [
-    ...Array(correctedLive).fill('live'),
-    ...Array(correctedBlank).fill('blank')
+  const shells = [
+    ...Array(live).fill("live"),
+    ...Array(blank).fill("blank"),
   ];
 
-  return shuffle(ammo);
+  shuffle(shells);
+  return shells;
 }
 
-function setSubtitle(text) {
-  els.subtitle.textContent = text;
+async function revealAmmoSequence(liveCount, blankCount) {
+  state.locked = true;
+  setSubtitle("테이블 스캔 시작. 장전 정보를 확인한다.");
+
+  // 카메라가 테이블로 이동하는 느낌.
+  cameraRig.classList.add("focus-table");
+
+  ammoTotalEl.textContent = String(state.shells.length);
+  ammoLiveEl.textContent = String(liveCount);
+  ammoBlankEl.textContent = String(blankCount);
+
+  shellSlotsEl.innerHTML = "";
+  for (let i = 0; i < state.shells.length; i += 1) {
+    const slot = document.createElement("div");
+    slot.className = `shell-slot ${i < liveCount ? "live" : "blank"}`;
+    shellSlotsEl.appendChild(slot);
+  }
+
+  ammoReveal.classList.remove("hidden");
+  setSubtitle(`총 ${state.shells.length}발이다. ${liveCount}발은 실탄. ${blankCount}발은 공포탄.`);
+
+  await sleep(2200);
+
+  ammoReveal.classList.add("hidden");
+  await sleep(250);
+
+  cameraRig.classList.remove("focus-table");
+  await sleep(550);
 }
 
-function setLocked(locked) {
-  state.locked = locked;
-  els.actionPanel.classList.toggle('locked', locked);
-  els.shootSelfBtn.disabled = locked;
-  els.shootEnemyBtn.disabled = locked;
+async function playerAction(target) {
+  if (state.locked || state.gameOver || state.turn !== "player") return;
+  ensureAudioContext();
+  state.locked = true;
+  await resolveShot("player", target);
 }
 
-function renderIntegrity(container, value) {
-  container.innerHTML = '';
-  for (let i = 0; i < MAX_INTEGRITY; i += 1) {
-    const pip = document.createElement('span');
-    pip.className = `integrity-pip ${i < value ? 'active' : 'destroyed'}`;
+async function enemyTurn() {
+  if (state.locked || state.gameOver || state.turn !== "enemy") return;
+  state.locked = true;
+
+  await sleep(650);
+
+  const liveChance = countType("live") / state.shells.length;
+  let target;
+
+  if (liveChance >= 0.55) {
+    target = "player";
+  } else if (liveChance <= 0.35) {
+    target = "self";
+  } else if (state.playerHp === 1 && liveChance >= 0.4) {
+    target = "player";
+  } else if (state.enemyHp === 1 && liveChance <= 0.5) {
+    target = "self";
+  } else {
+    target = Math.random() < 0.55 ? "player" : "self";
+  }
+
+  await resolveShot("enemy", target);
+}
+
+async function resolveShot(actor, target) {
+  if (state.shells.length === 0) {
+    await nextRound();
+    return;
+  }
+
+  const aimedAt = actor === "player"
+    ? (target === "self" ? "player" : "enemy")
+    : (target === "self" ? "enemy" : "player");
+
+  setSubtitle(
+    actor === "player"
+      ? target === "self"
+        ? "내 기체를 겨눈다..."
+        : "상대 기체를 겨눈다..."
+      : target === "self"
+      ? "상대가 자기 기체를 겨눈다..."
+      : "상대가 네 기체를 겨눈다..."
+  );
+
+  updateTurnLabel(actor === "player" ? "너의 턴" : "상대 턴");
+
+  // 총을 든다.
+  await raiseShotgun(aimedAt);
+  await sleep(240);
+
+  const shell = state.shells.shift();
+  const wasBlank = shell === "blank";
+  const selfShot = target === "self";
+
+  // 쏜다.
+  await fireShotgun(aimedAt, shell);
+
+  if (wasBlank) {
+    setSubtitle("찰칵. 티잉— 공포탄이다.");
+    writeLog(
+      `${actor === "player" ? "너" : "상대"}는 ${
+        selfShot ? "자기 기체" : aimedAt === "player" ? "네 기체" : "상대 기체"
+      }를 겨눴지만 공포탄이었다.`
+    );
+
+    const extraTurn = selfShot;
+    await sleep(600);
+
+    // 총을 다시 내린다.
+    await lowerShotgun();
+
+    if (state.shells.length === 0) {
+      state.turn = extraTurn ? actor : nextActor(actor);
+      await nextRound();
+      return;
+    }
+
+    if (extraTurn) {
+      state.turn = actor;
+
+      if (actor === "player") {
+        updateTurnLabel("너의 턴");
+        setSubtitle("공포탄이다. 자기 기체를 쐈으니 한 번 더 행동할 수 있다.");
+        state.locked = false;
+      } else {
+        updateTurnLabel("상대 턴");
+        setSubtitle("상대가 공포탄을 뽑았다. 한 번 더 행동한다.");
+        await sleep(800);
+        enemyTurn();
+      }
+    } else {
+      state.turn = nextActor(actor);
+      handOverTurn();
+    }
+
+    return;
+  }
+
+  if (aimedAt === "player") {
+    damagePlayer();
+  } else {
+    damageEnemy();
+  }
+
+  setSubtitle("타앙— 실탄이다.");
+  writeLog(
+    `${actor === "player" ? "너" : "상대"}가 ${
+      aimedAt === "player" ? "플레이어 기체" : "상대 기체"
+    }에 실탄을 맞혔다.`
+  );
+
+  renderIntegrity();
+  await sleep(700);
+  await lowerShotgun();
+
+  if (checkGameOver()) return;
+
+  if (state.shells.length === 0) {
+    state.turn = nextActor(actor);
+    await nextRound();
+    return;
+  }
+
+  state.turn = nextActor(actor);
+  handOverTurn();
+}
+
+function handOverTurn() {
+  if (state.turn === "player") {
+    updateTurnLabel("너의 턴");
+    setSubtitle("네 차례다. 선택해.");
+    state.locked = false;
+  } else {
+    updateTurnLabel("상대 턴");
+    setSubtitle("상대 기체가 판단 중이다...");
+    setTimeout(() => enemyTurn(), 850);
+  }
+}
+
+function damagePlayer() {
+  state.playerHp = Math.max(0, state.playerHp - 1);
+  pulseRobot(playerRobotEl);
+  if (state.playerHp <= 1) playerRobotEl.classList.add("critical");
+}
+
+function damageEnemy() {
+  state.enemyHp = Math.max(0, state.enemyHp - 1);
+  pulseRobot(enemyRobotEl);
+  if (state.enemyHp <= 1) enemyRobotEl.classList.add("critical");
+}
+
+function pulseRobot(el) {
+  el.classList.add("hit");
+  setTimeout(() => el.classList.remove("hit"), 350);
+}
+
+function checkGameOver() {
+  if (state.playerHp <= 0 || state.enemyHp <= 0) {
+    state.gameOver = true;
+    state.locked = true;
+    restartBtn.style.display = "inline-flex";
+
+    if (state.playerHp <= 0 && state.enemyHp <= 0) {
+      updateTurnLabel("무승부");
+      setSubtitle("양쪽 기체 모두 정지했다.");
+      writeLog("무승부. 양쪽 기체 모두 기능 정지.");
+    } else if (state.enemyHp <= 0) {
+      updateTurnLabel("승리");
+      setSubtitle("상대 기체 정지. 네가 이겼다.");
+      writeLog("승리. 상대 기체가 완전히 정지했다.");
+    } else {
+      updateTurnLabel("패배");
+      setSubtitle("기체 파손. 접속 종료.");
+      writeLog("패배. 네 기체가 기능 정지했다.");
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+async function raiseShotgun(target) {
+  shotgunEl.classList.remove("lowered", "aim-self", "aim-enemy", "firing");
+  shotgunEl.classList.add(target === "player" ? "aim-self" : "aim-enemy");
+  await sleep(280);
+}
+
+async function fireShotgun(target, shellType) {
+  shotgunEl.classList.add("firing");
+
+  if (shellType === "blank") {
+    playBlankShot();
+  } else {
+    playLiveShot();
+  }
+
+  await sleep(220);
+  shotgunEl.classList.remove("firing");
+}
+
+async function lowerShotgun() {
+  shotgunEl.classList.remove("aim-self", "aim-enemy", "firing");
+  shotgunEl.classList.add("lowered");
+  await sleep(240);
+}
+
+function renderIntegrity() {
+  renderPips(playerIntegrityEl, state.playerHp);
+  renderPips(enemyIntegrityEl, state.enemyHp);
+}
+
+function renderPips(container, activeCount) {
+  container.innerHTML = "";
+  for (let i = 0; i < 3; i += 1) {
+    const pip = document.createElement("div");
+    pip.className = `pip ${i < activeCount ? "active" : ""}`;
     container.appendChild(pip);
   }
 }
 
-function updateRobotDamage() {
-  const damage = MAX_INTEGRITY - state.enemyIntegrity;
-  els.enemyRobot.classList.remove('damage-1', 'damage-2', 'destroyed');
-  if (state.enemyIntegrity <= 0) {
-    els.enemyRobot.classList.add('destroyed');
-  } else if (damage >= 2) {
-    els.enemyRobot.classList.add('damage-2');
-  } else if (damage >= 1) {
-    els.enemyRobot.classList.add('damage-1');
+function setSubtitle(text) {
+  subtitleEl.textContent = text;
+}
+
+function updateTurnLabel(text) {
+  turnLabelEl.textContent = text;
+}
+
+function writeLog(text) {
+  logBoxEl.textContent = text;
+}
+
+function countType(type) {
+  return state.shells.filter((shell) => shell === type).length;
+}
+
+function nextActor(actor) {
+  return actor === "player" ? "enemy" : "player";
+}
+
+function removeRobotStates() {
+  playerRobotEl.classList.remove("critical", "hit");
+  enemyRobotEl.classList.remove("critical", "hit");
+  shotgunEl.className = "shotgun lowered";
+  ammoReveal.classList.add("hidden");
+  cameraRig.classList.remove("focus-table");
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 }
 
-function renderHud() {
-  renderIntegrity(els.playerIntegrity, state.playerIntegrity);
-  renderIntegrity(els.enemyIntegrity, state.enemyIntegrity);
-  updateRobotDamage();
-  els.roundNumber.textContent = String(Math.max(1, state.round)).padStart(2, '0');
-  els.remainingCount.textContent = state.ammo.length;
-  els.turnLabel.textContent = state.turn === 'player' ? 'YOU' : 'UNIT 07';
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function renderShellTray(stats) {
-  els.shellTray.innerHTML = '';
-  const visible = [
-    ...Array(stats.live).fill('live'),
-    ...Array(stats.blank).fill('blank')
-  ];
+function ensureAudioContext() {
+  if (!state.audioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    state.audioCtx = new AudioCtx();
+  }
 
-  for (const type of visible) {
-    const shell = document.createElement('span');
-    shell.className = `shell ${type}`;
-    shell.title = type === 'live' ? '실탄' : '공포탄';
-    els.shellTray.appendChild(shell);
+  if (state.audioCtx.state === "suspended") {
+    state.audioCtx.resume();
   }
 }
 
-async function showTurnBriefing(isNewRound = false) {
-  const token = ++state.briefingToken;
-  const stats = remainingStats();
+function playBlankShot() {
+  const ctx = state.audioCtx;
+  if (!ctx) return;
 
-  els.startBtn.style.display = 'none';
-  els.briefingEyebrow.textContent = isNewRound
-    ? `CHAMBER ${String(state.round).padStart(2, '0')} // LOAD REPORT`
-    : `${state.turn === 'player' ? 'REMOTE AVATAR' : 'HOUSE UNIT'} // TURN REPORT`;
-  els.briefingTitle.textContent = `${stats.total}발`;
-  els.briefingText.textContent = `실탄 ${stats.live}발. 공포탄 ${stats.blank}발.`;
-  els.briefTotal.textContent = stats.total;
-  els.briefLive.textContent = stats.live;
-  els.briefBlank.textContent = stats.blank;
-  renderShellTray(stats);
-  els.briefingOverlay.classList.add('visible');
+  const now = ctx.currentTime;
 
-  setSubtitle(`총 ${stats.total}발. 실탄 ${stats.live}발. 공포탄 ${stats.blank}발.`);
-  await sleep(isNewRound ? 1900 : 1350);
+  // 찰칵
+  const clickOsc = ctx.createOscillator();
+  const clickGain = ctx.createGain();
+  clickOsc.type = "square";
+  clickOsc.frequency.setValueAtTime(210, now);
+  clickGain.gain.setValueAtTime(0.0001, now);
+  clickGain.gain.linearRampToValueAtTime(0.16, now + 0.008);
+  clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+  clickOsc.connect(clickGain).connect(ctx.destination);
+  clickOsc.start(now);
+  clickOsc.stop(now + 0.08);
 
-  if (token !== state.briefingToken || !state.running) return false;
-  els.briefingOverlay.classList.remove('visible');
-  await sleep(230);
-  return true;
+  // 티잉—
+  const tingOsc1 = ctx.createOscillator();
+  const tingOsc2 = ctx.createOscillator();
+  const tingGain = ctx.createGain();
+
+  tingOsc1.type = "triangle";
+  tingOsc2.type = "sine";
+  tingOsc1.frequency.setValueAtTime(1320, now + 0.11);
+  tingOsc2.frequency.setValueAtTime(1760, now + 0.11);
+
+  tingGain.gain.setValueAtTime(0.0001, now + 0.11);
+  tingGain.gain.linearRampToValueAtTime(0.12, now + 0.14);
+  tingGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+  tingOsc1.connect(tingGain);
+  tingOsc2.connect(tingGain);
+  tingGain.connect(ctx.destination);
+
+  tingOsc1.start(now + 0.11);
+  tingOsc2.start(now + 0.11);
+  tingOsc1.stop(now + 0.52);
+  tingOsc2.stop(now + 0.52);
 }
 
-async function newRound() {
-  if (!state.running) return;
-  setLocked(true);
-  state.round += 1;
-  state.ammo = generateAmmo();
-  state.turn = 'player';
-  renderHud();
+function playLiveShot() {
+  const ctx = state.audioCtx;
+  if (!ctx) return;
 
-  setSubtitle('장전 시퀀스 확인 중...');
-  const ok = await showTurnBriefing(true);
-  if (!ok || !state.running) return;
-  beginTurn();
-}
+  const now = ctx.currentTime;
 
-async function beginTurn() {
-  if (!state.running) return;
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const gain = ctx.createGain();
 
-  if (state.ammo.length === 0) {
-    setSubtitle('탄환 소진. 새 장전을 준비한다.');
-    setLocked(true);
-    await sleep(900);
-    if (state.running) newRound();
-    return;
-  }
+  osc1.type = "sawtooth";
+  osc2.type = "triangle";
+  osc1.frequency.setValueAtTime(92, now);
+  osc2.frequency.setValueAtTime(148, now);
 
-  setLocked(true);
-  renderHud();
-  const ok = await showTurnBriefing(false);
-  if (!ok || !state.running) return;
-
-  renderHud();
-  if (state.turn === 'player') {
-    setSubtitle('선택해. 어느 기체에 발사하지?');
-    setLocked(false);
-  } else {
-    setSubtitle('UNIT 07이 계산 중이다...');
-    await sleep(700 + Math.random() * 650);
-    if (!state.running) return;
-    aiTurn();
-  }
-}
-
-function ensureAudio() {
-  if (!audioCtx) {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx) audioCtx = new Ctx();
-  }
-  if (audioCtx?.state === 'suspended') audioCtx.resume();
-}
-
-function createNoiseBuffer(duration = 0.5) {
-  if (!audioCtx) return null;
-  const length = Math.floor(audioCtx.sampleRate * duration);
-  const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < length; i += 1) {
-    data[i] = Math.random() * 2 - 1;
-  }
-  return buffer;
-}
-
-function playMechanicalClick() {
-  if (!audioCtx) return;
-  const now = audioCtx.currentTime;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'square';
-  osc.frequency.setValueAtTime(155, now);
-  osc.frequency.exponentialRampToValueAtTime(95, now + 0.045);
-  gain.gain.setValueAtTime(0.14, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start(now);
-  osc.stop(now + 0.06);
-}
-
-function playMetalTing(delay = 0.16) {
-  if (!audioCtx) return;
-  const now = audioCtx.currentTime + delay;
-  const gain = audioCtx.createGain();
   gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.09, now + 0.008);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.72);
-  gain.connect(audioCtx.destination);
+  gain.gain.linearRampToValueAtTime(0.32, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.36);
 
-  [1320, 1890, 2480].forEach((frequency, index) => {
-    const osc = audioCtx.createOscillator();
-    osc.type = index === 0 ? 'triangle' : 'sine';
-    osc.frequency.setValueAtTime(frequency, now);
-    osc.frequency.exponentialRampToValueAtTime(frequency * 0.86, now + 0.65);
-    const partialGain = audioCtx.createGain();
-    partialGain.gain.value = index === 0 ? 0.75 : 0.25;
-    osc.connect(partialGain).connect(gain);
-    osc.start(now);
-    osc.stop(now + 0.75);
-  });
-}
+  osc1.connect(gain);
+  osc2.connect(gain);
+  gain.connect(ctx.destination);
 
-function playBlankSound() {
-  ensureAudio();
-  playMechanicalClick();
-  playMetalTing(0.17);
-}
+  osc1.start(now);
+  osc2.start(now);
+  osc1.stop(now + 0.38);
+  osc2.stop(now + 0.38);
 
-function playLiveSound() {
-  ensureAudio();
-  if (!audioCtx) return;
-  const now = audioCtx.currentTime;
+  const bufferSize = Math.floor(ctx.sampleRate * 0.18);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
 
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = createNoiseBuffer(0.48);
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(5200, now);
-  filter.frequency.exponentialRampToValueAtTime(550, now + 0.42);
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.42, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.46);
-  noise.connect(filter).connect(gain).connect(audioCtx.destination);
+  for (let i = 0; i < bufferSize; i += 1) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  }
+
+  const noise = ctx.createBufferSource();
+  const noiseGain = ctx.createGain();
+  noise.buffer = buffer;
+  noiseGain.gain.setValueAtTime(0.24, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+  noise.connect(noiseGain).connect(ctx.destination);
   noise.start(now);
-  noise.stop(now + 0.5);
-
-  const thump = audioCtx.createOscillator();
-  const thumpGain = audioCtx.createGain();
-  thump.type = 'sine';
-  thump.frequency.setValueAtTime(105, now);
-  thump.frequency.exponentialRampToValueAtTime(42, now + 0.23);
-  thumpGain.gain.setValueAtTime(0.26, now);
-  thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
-  thump.connect(thumpGain).connect(audioCtx.destination);
-  thump.start(now);
-  thump.stop(now + 0.28);
-
-  const ring = audioCtx.createOscillator();
-  const ringGain = audioCtx.createGain();
-  ring.type = 'triangle';
-  ring.frequency.setValueAtTime(720, now + 0.015);
-  ring.frequency.exponentialRampToValueAtTime(390, now + 0.38);
-  ringGain.gain.setValueAtTime(0.055, now + 0.015);
-  ringGain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
-  ring.connect(ringGain).connect(audioCtx.destination);
-  ring.start(now + 0.015);
-  ring.stop(now + 0.43);
+  noise.stop(now + 0.2);
 }
-
-function animateShot(isLive, target) {
-  els.shotgun.classList.remove('recoil');
-  void els.shotgun.offsetWidth;
-  els.shotgun.classList.add('recoil');
-  setTimeout(() => els.shotgun.classList.remove('recoil'), 160);
-
-  if (isLive) {
-    els.muzzleFlash.classList.remove('fire');
-    void els.muzzleFlash.offsetWidth;
-    els.muzzleFlash.classList.add('fire');
-
-    els.shell.classList.remove('shake');
-    void els.shell.offsetWidth;
-    els.shell.classList.add('shake');
-    setTimeout(() => els.shell.classList.remove('shake'), 280);
-
-    if (target === 'enemy') {
-      els.sparks.classList.remove('active');
-      void els.sparks.offsetWidth;
-      els.sparks.classList.add('active');
-    } else {
-      els.playerHitFlash.classList.remove('active');
-      void els.playerHitFlash.offsetWidth;
-      els.playerHitFlash.classList.add('active');
-    }
-  }
-}
-
-async function shoot(shooter, target) {
-  if (!state.running || state.ammo.length === 0) return;
-  if (shooter === 'player' && (state.turn !== 'player' || state.locked)) return;
-  if (shooter === 'ai' && state.turn !== 'ai') return;
-
-  setLocked(true);
-  ensureAudio();
-
-  const shell = state.ammo.shift();
-  const isLive = shell === 'live';
-  const targetName = target === 'player' ? 'REMOTE AVATAR' : 'UNIT 07';
-
-  setSubtitle(`${targetName} 조준.`);
-  await sleep(380);
-
-  animateShot(isLive, target === 'player' ? 'player' : 'enemy');
-
-  if (isLive) {
-    playLiveSound();
-    setSubtitle('타앙—! 실탄이다.');
-
-    if (target === 'player') {
-      state.playerIntegrity -= 1;
-    } else {
-      state.enemyIntegrity -= 1;
-    }
-
-    renderHud();
-    await sleep(1050);
-  } else {
-    playBlankSound();
-    setSubtitle('찰칵.  티잉—  공포탄이다.');
-    renderHud();
-    await sleep(1050);
-  }
-
-  if (state.playerIntegrity <= 0 || state.enemyIntegrity <= 0) {
-    endGame(state.enemyIntegrity <= 0 ? 'win' : 'lose');
-    return;
-  }
-
-  if (state.ammo.length === 0) {
-    setSubtitle('탄환 소진. 새 장전을 준비한다.');
-    await sleep(850);
-    if (state.running) newRound();
-    return;
-  }
-
-  const selfTarget = (shooter === 'player' && target === 'player') || (shooter === 'ai' && target === 'enemy');
-  const extraTurn = !isLive && selfTarget;
-
-  if (extraTurn) {
-    setSubtitle(`${shooter === 'player' ? '공포탄. 추가 행동을 획득했다.' : 'UNIT 07이 추가 행동을 확보했다.'}`);
-  } else {
-    state.turn = shooter === 'player' ? 'ai' : 'player';
-  }
-
-  renderHud();
-  await sleep(620);
-  if (state.running) beginTurn();
-}
-
-function aiTurn() {
-  if (!state.running || state.turn !== 'ai' || state.ammo.length === 0) return;
-
-  const stats = remainingStats();
-  const blankChance = stats.blank / stats.total;
-  let chooseSelf = false;
-
-  if (blankChance >= 0.75) {
-    chooseSelf = Math.random() < 0.88;
-  } else if (blankChance >= 0.6) {
-    chooseSelf = Math.random() < 0.68;
-  } else if (blankChance >= 0.5) {
-    chooseSelf = Math.random() < 0.42;
-  } else {
-    chooseSelf = Math.random() < 0.08;
-  }
-
-  if (chooseSelf) {
-    setSubtitle('UNIT 07이 자기 기체를 겨눈다.');
-    shoot('ai', 'enemy');
-  } else {
-    setSubtitle('UNIT 07이 네 기체를 겨눈다.');
-    shoot('ai', 'player');
-  }
-}
-
-function endGame(result) {
-  state.running = false;
-  state.briefingToken += 1;
-  setLocked(true);
-  els.briefingOverlay.classList.remove('visible');
-
-  if (result === 'win') {
-    els.endTitle.textContent = 'HOUSE UNIT OFFLINE';
-    els.endText.textContent = `상대 기체가 정지했다. ${state.round}번째 챔버에서 세션 승리.`;
-    setSubtitle('상대 기체 정지. 세션 승리.');
-  } else {
-    els.endTitle.textContent = 'REMOTE AVATAR OFFLINE';
-    els.endText.textContent = `원격 아바타 연결이 끊겼다. ${state.round}번째 챔버에서 세션 종료.`;
-    setSubtitle('기체 파손. 원격 접속 종료.');
-  }
-
-  setTimeout(() => els.endOverlay.classList.add('visible'), 350);
-}
-
-function resetGame() {
-  state.playerIntegrity = MAX_INTEGRITY;
-  state.enemyIntegrity = MAX_INTEGRITY;
-  state.ammo = [];
-  state.round = 0;
-  state.turn = 'player';
-  state.running = true;
-  state.locked = true;
-  state.briefingToken += 1;
-
-  els.endOverlay.classList.remove('visible');
-  els.enemyRobot.classList.remove('damage-1', 'damage-2', 'destroyed');
-  renderHud();
-  setSubtitle('원격 아바타 연결 완료.');
-  newRound();
-}
-
-els.shootSelfBtn.addEventListener('click', () => shoot('player', 'player'));
-els.shootEnemyBtn.addEventListener('click', () => shoot('player', 'enemy'));
-
-els.startBtn.addEventListener('click', () => {
-  ensureAudio();
-  els.briefingOverlay.classList.remove('visible');
-  els.startBtn.style.display = 'none';
-  setTimeout(resetGame, 240);
-});
-
-els.restartBtn.addEventListener('click', () => {
-  ensureAudio();
-  resetGame();
-});
-
-window.addEventListener('keydown', event => {
-  if (!state.running || state.turn !== 'player' || state.locked) return;
-  if (event.key === '1') shoot('player', 'player');
-  if (event.key === '2') shoot('player', 'enemy');
-});
-
-renderHud();
-setLocked(true);
