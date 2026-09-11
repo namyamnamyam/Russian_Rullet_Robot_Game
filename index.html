@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#030302" />
+  <meta name="theme-color" content="#020202" />
   <title>Chrome Chamber // Prototype</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -16,130 +16,123 @@
     <main class="viewport">
       <div id="cameraRig" class="camera-rig">
         <div class="scene">
-          <div class="black-void"></div>
-          <div class="rear-glow"></div>
+          <div class="void-bg"></div>
+          <div class="rear-red-haze"></div>
 
-          <div class="hanging-cable cable-a"></div>
-          <div class="hanging-cable cable-b"></div>
-          <div class="hanging-cable cable-c"></div>
-          <div class="hanging-cable cable-d"></div>
+          <div class="cable cable-a"></div>
+          <div class="cable cable-b"></div>
+          <div class="cable cable-c"></div>
 
           <div class="studio-lamp lamp-left" aria-hidden="true">
-            <div class="lamp-yoke"></div>
-            <div class="lamp-shell"><span></span></div>
-            <i class="barn-door door-top"></i><i class="barn-door door-bottom"></i>
-            <i class="barn-door door-left"></i><i class="barn-door door-right"></i>
-            <div class="lamp-cone"></div>
+            <div class="lamp-core"></div>
+            <div class="door top"></div>
+            <div class="door bottom"></div>
+            <div class="door left"></div>
+            <div class="door right"></div>
           </div>
 
           <div class="studio-lamp lamp-right" aria-hidden="true">
-            <div class="lamp-yoke"></div>
-            <div class="lamp-shell"><span></span></div>
-            <i class="barn-door door-top"></i><i class="barn-door door-bottom"></i>
-            <i class="barn-door door-left"></i><i class="barn-door door-right"></i>
-            <div class="lamp-cone"></div>
+            <div class="lamp-core"></div>
+            <div class="door top"></div>
+            <div class="door bottom"></div>
+            <div class="door left"></div>
+            <div class="door right"></div>
           </div>
 
           <aside class="speaker-stack" aria-hidden="true">
-            <div class="speaker-box main-speaker">
-              <div class="speaker-cone woofer"></div>
-              <div class="speaker-cone tweeter"></div>
+            <div class="speaker-box">
+              <div class="speaker big"></div>
+              <div class="speaker small"></div>
             </div>
-            <div class="speaker-box aux-speaker"><div class="speaker-cone mid"></div></div>
-          </aside>
-
-          <aside class="score-crt" aria-label="상태 모니터">
-            <div class="crt-body">
-              <div class="crt-glass">
-                <div class="crt-head"><span>HOUSE TABLE // CH-07</span><b></b></div>
-                <div class="score-row">
-                  <span>DEALER</span>
-                  <div id="enemyIntegrity" class="integrity" aria-label="상대 기체 내구도"></div>
-                </div>
-                <div class="score-rule"><i></i></div>
-                <div class="score-row player-row">
-                  <span>REMOTE</span>
-                  <div id="playerIntegrity" class="integrity" aria-label="내 기체 내구도"></div>
-                </div>
-                <div id="turnLabel" class="turn-label">초기화 중...</div>
-              </div>
-              <div class="crt-knobs"><i></i><i></i><i></i></div>
+            <div class="speaker-box lower">
+              <div class="speaker mid"></div>
             </div>
           </aside>
 
-          <aside class="feed-terminal" aria-label="테이블 피드">
-            <div class="feed-shell">
-              <div class="feed-screen">
-                <span class="feed-label">TABLE FEED</span>
+          <aside class="right-terminal" aria-label="테이블 단말기">
+            <div class="terminal-shell">
+              <div class="terminal-screen">
+                <div class="terminal-head"><span>DEALER / YOU</span></div>
                 <div id="logBox" class="log-box">링크 대기 중...</div>
+                <div class="terminal-meter"><div class="meter-line"></div></div>
               </div>
             </div>
           </aside>
 
-          <div class="dealer-halo"></div>
-
-          <div id="enemyRobot" class="robot enemy sprite-cutout" aria-label="회색 휴머노이드 로봇">
-            <div class="robot-head">
-              <div class="head-wear"></div>
-              <div class="face-plate"></div>
-              <div class="robot-eye eye-left"></div>
-              <div class="robot-eye eye-right"></div>
-              <div class="mouth-grille">
-                <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-              </div>
-            </div>
-            <div class="robot-neck"></div>
-            <div class="robot-torso"><div class="chest-stamp">UNIT 07</div></div>
-            <div class="robot-arm arm-left"><span class="joint"></span><span class="hand"></span></div>
-            <div class="robot-arm arm-right"><span class="joint"></span><span class="hand"></span></div>
+          <div class="status enemy-status">
+            <span>DEALER</span>
+            <div id="enemyIntegrity" class="integrity" aria-label="상대 기체 내구도"></div>
+          </div>
+          <div class="status player-status">
+            <span>YOU</span>
+            <div id="playerIntegrity" class="integrity" aria-label="내 기체 내구도"></div>
           </div>
 
-          <div id="playerRobot" class="robot player" aria-hidden="true"><div class="robot-head"></div><div class="robot-torso"></div></div>
+          <div class="titleplate">
+            <small>ILLEGAL REMOTE TABLE</small>
+            <strong>CHROME CHAMBER</strong>
+            <span id="turnLabel">초기화 중...</span>
+          </div>
+
+          <div id="enemyRobot" class="dealer-entity" aria-label="회색 로봇 딜러">
+            <div class="dealer-shadow"></div>
+            <div class="dealer-head">
+              <div class="head-crack"></div>
+              <div class="eye eye-left"></div>
+              <div class="eye eye-right"></div>
+              <div class="mouth"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
+            <div class="dealer-hand hand-left">
+              <div class="palm"></div><div class="finger f1"></div><div class="finger f2"></div><div class="finger f3"></div><div class="finger f4"></div>
+            </div>
+            <div class="dealer-hand hand-right">
+              <div class="palm"></div><div class="finger f1"></div><div class="finger f2"></div><div class="finger f3"></div><div class="finger f4"></div>
+            </div>
+          </div>
+
+          <div id="playerRobot" class="player-hit-proxy" aria-hidden="true"></div>
 
           <div class="table-zone">
             <div class="table-shadow"></div>
-            <div class="table-back-rim"></div>
+            <div class="table-back-edge"></div>
             <div class="table-plane">
               <div class="table-grime"></div>
               <div class="table-grid"></div>
               <div class="table-arc"></div>
-              <div class="table-mark dealer-mark">HOUSE</div>
-              <div class="table-mark player-mark">REMOTE</div>
-              <div class="shell-bay-outline"></div>
+              <div class="table-mark table-left">House</div>
+              <div class="table-mark table-you">You</div>
+              <div class="table-mark table-dealer">Dealer</div>
             </div>
             <div class="table-front-edge"></div>
 
-            <div class="prop prop-loop loop-a" aria-hidden="true"></div>
-            <div class="prop prop-loop loop-b" aria-hidden="true"></div>
-            <div class="prop prop-card card-a" aria-hidden="true"></div>
-            <div class="prop prop-card card-b" aria-hidden="true"></div>
-            <div class="prop prop-box box-a" aria-hidden="true"></div>
-            <div class="prop prop-can can-a" aria-hidden="true"><span>07</span></div>
-            <div class="prop prop-can can-b" aria-hidden="true"><span>07</span></div>
-            <div class="prop prop-strip strip-a" aria-hidden="true"></div>
+            <div class="prop loop loop-a" aria-hidden="true"></div>
+            <div class="prop loop loop-b" aria-hidden="true"></div>
+            <div class="prop card-box box-a" aria-hidden="true"></div>
+            <div class="prop card-box box-b" aria-hidden="true"></div>
+            <div class="prop can can-a" aria-hidden="true"><span>CM</span></div>
+            <div class="prop can can-b" aria-hidden="true"><span>CM</span></div>
+            <div class="prop can can-c" aria-hidden="true"><span>CM</span></div>
+            <div class="prop shell loose-shell" aria-hidden="true"></div>
+            <div class="prop shell dark-shell" aria-hidden="true"></div>
 
             <div id="ammoReveal" class="ammo-reveal hidden">
-              <div class="reveal-copy">
-                <span>LOAD REPORT</span>
-                <strong><b id="ammoTotal">0</b> ROUNDS</strong>
-                <small><em id="ammoLive">0</em> LIVE // <em id="ammoBlank">0</em> BLANK</small>
+              <div class="ammo-title"><strong>CHAMBER REPORT</strong><small>LOAD SCAN</small></div>
+              <div class="ammo-stats">
+                <div class="ammo-stat"><span>TOTAL</span><strong id="ammoTotal">0</strong></div>
+                <div class="ammo-stat live"><span>LIVE</span><strong id="ammoLive">0</strong></div>
+                <div class="ammo-stat blank"><span>BLANK</span><strong id="ammoBlank">0</strong></div>
               </div>
               <div id="shellSlots" class="shell-slots" aria-label="탄 구성"></div>
             </div>
 
             <div id="shotgun" class="shotgun lowered" aria-label="경기용 더블배럴 샷건">
-              <div class="barrel-shadow"></div>
-              <div class="muzzle-ring"></div>
-              <div class="barrels"><div class="barrel barrel-top"></div><div class="barrel barrel-bottom"></div></div>
-              <div class="foregrip"></div>
-              <div class="break-joint"></div>
-              <div class="receiver"><span class="receiver-pin pin-a"></span><span class="receiver-pin pin-b"></span></div>
-              <div class="trigger-guard"></div>
+              <div class="barrels"><div class="barrel top"></div><div class="barrel bottom"></div></div>
+              <div class="pump"></div>
+              <div class="receiver"></div>
+              <div class="trigger"></div>
               <div class="stock"></div>
             </div>
           </div>
-
-          <div class="table-corner-label">CHROME CHAMBER / REMOTE TABLE</div>
         </div>
       </div>
     </main>
@@ -150,16 +143,15 @@
         <button id="shootSelfBtn" class="action-btn self-btn" type="button">
           <span class="btn-no">01</span><span class="btn-copy"><strong>나</strong><small>내 기체를 겨눈다</small></span>
         </button>
-        <button id="shootEnemyBtn" class="action-btn enemy-btn primary" type="button">
+        <button id="shootEnemyBtn" class="action-btn enemy-btn" type="button">
           <span class="btn-no">02</span><span class="btn-copy"><strong>딜러</strong><small>상대 기체를 겨눈다</small></span>
         </button>
         <button id="restartBtn" class="action-btn ghost restart-btn" type="button">
-          <span class="btn-no">↻</span><span class="btn-copy"><strong>재접속</strong><small>세션 초기화</small></span>
+          <span class="btn-no">↻</span><span class="btn-copy"><strong>재시작</strong><small>세션 초기화</small></span>
         </button>
       </div>
     </section>
   </div>
-
   <script src="game.js"></script>
 </body>
 </html>
